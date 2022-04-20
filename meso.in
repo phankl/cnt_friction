@@ -1,0 +1,65 @@
+#Initialisation
+
+units metal
+dimension 3
+boundary p p p 
+atom_style full
+newton on
+neighbor 16.23 bin
+
+#Read data
+
+read_data meso.data
+
+#Force field
+
+bond_style harmonic
+bond_coeff 1 38.447 10.0
+
+angle_style mesocnt
+angle_coeff 1 217.857 44.364 4.165
+
+pair_style mesocnt
+pair_coeff * * C_10_10.mesocnt 0
+
+#Minimization
+
+thermo 100
+minimize 0.0 1.0e-8 1000 100000
+
+#Groups
+
+group ring1 type 2
+group ring2 type 3
+group rest subtract all ring1 ring2
+
+group cnt1 molecule 1
+group cnt2 molecule 2
+
+#Simulation Setup
+
+reset_timestep 0
+timestep 2.0e-2
+
+#Output
+
+dump custom all custom 100 cnt.lmp type mol x y z vx vy vz fx fy fz
+dump_modify custom sort id
+
+compute force1 cnt1 reduce sum fx fy fz
+compute force2 cnt2 reduce sum fx fy fz
+
+fix force1 cnt1 ave/time 1 1 1 c_force1[*] file cnt1_force.dat
+fix force2 cnt1 ave/time 1 1 1 c_force2[*] file cnt2_force.dat
+
+#Velocity constraints
+
+fix 1 ring1 move linear 0 NULL NULL
+fix 2 ring2 move linear 0.1 NULL NULL
+
+fix nvt rest nvt temp 300 300 1.0e-1
+
+#Run
+
+velocity all create 300.0 2022
+run 500000
