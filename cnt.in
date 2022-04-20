@@ -1,0 +1,59 @@
+#Initialisation
+
+units metal
+dimension 3
+boundary p s s
+atom_style full
+newton on
+
+#Read Data
+
+read_data cnt.data
+
+#Force field
+
+pair_style hybrid/overlay airebo 3.0 kolmogorov/crespi/full 20.0 0
+pair_coeff * * airebo CH.airebo C C C
+pair_coeff * * kolmogorov/crespi/full CH.KC C C C
+
+#Minimization
+
+thermo 100
+minimize 0.0 1.0e-8 1000 100000
+
+#Groups
+
+group ring1 type 2
+group ring2 type 3
+group rest subtract all ring1 ring2
+
+group cnt1 molecule 1
+group cnt2 molecule 2
+
+#Simulation Setup
+
+reset_timestep 0
+timestep 2.0e-3
+
+#Output
+
+dump custom all custom 100 cnt.lmp type mol x y z vx vy vz fx fy fz
+dump_modify custom sort id
+
+compute force1 cnt1 reduce sum fx fy fz
+compute force2 cnt2 reduce sum fx fy fz
+
+fix force1 cnt1 ave/time 1 1 1 c_force1[*] file cnt1_force.dat
+fix force2 cnt1 ave/time 1 1 1 c_force2[*] file cnt2_force.dat
+
+#Velocity constraints
+
+fix 1 ring1 move linear 0 NULL NULL
+fix 2 ring2 move linear 0.1 NULL NULL
+
+fix nvt rest nvt temp 300 300 1.0e-1
+
+#Run
+
+velocity all create 300.0 2022
+run 10000
