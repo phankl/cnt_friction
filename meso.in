@@ -6,6 +6,7 @@ boundary p p p
 atom_style full
 newton on
 neighbor 16.23 bin
+neigh_modify exclude molecule/intra all
 
 #Read data
 
@@ -19,8 +20,8 @@ bond_coeff 1 38.447 10.0
 angle_style mesocnt
 angle_coeff 1 217.857 44.364 4.165
 
-pair_style mesocnt
-pair_coeff * * C_10_10.mesocnt 0
+pair_style mesocnt/viscous 
+pair_coeff * * C_10_10.mesocnt 1.0e-2 10 0
 
 #Minimization
 
